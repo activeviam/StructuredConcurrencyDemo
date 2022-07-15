@@ -4,6 +4,7 @@ import static com.activeviam.experiments.gameoflife.biz.Utils.parseArg;
 
 import com.activeviam.experiments.gameoflife.biz.board.Board;
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
+import com.activeviam.experiments.gameoflife.task.ATask;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -16,10 +17,10 @@ import jdk.incubator.concurrent.StructuredTaskScope;
 
 public class PrettyExportTask extends AExportTask {
 
-	private Callable<BoardChunk>[] chunkTasks;
+	private List<ATask<BoardChunk>> chunkTasks;
 	private File file;
 
-	private PrettyExportTask(Callable<BoardChunk>[] chunkTasks, File file) {
+	private PrettyExportTask(List<ATask<BoardChunk>> chunkTasks, File file) {
 		this.chunkTasks = chunkTasks;
 		this.file = file;
 	}
@@ -27,7 +28,7 @@ public class PrettyExportTask extends AExportTask {
 	private record Parameters(File file) {
 	}
 
-	public static Callable<Void> build(SinkConfig config, Callable<BoardChunk>[] chunkTasks) {
+	public static PrettyExportTask build(SinkConfig config, List<ATask<BoardChunk>> chunkTasks) {
 		Parameters params = tryParseParams(config);
 		return new PrettyExportTask(chunkTasks, params.file);
 	}
@@ -44,11 +45,16 @@ public class PrettyExportTask extends AExportTask {
 	}
 
 	@Override
+	protected List<ATask<?>> getDependencies() {
+		return new ArrayList<>(chunkTasks);
+	}
+
+	@Override
 	protected Void compute() throws Exception {
-		BoardChunk[] chunks = new BoardChunk[chunkTasks.length];
+		BoardChunk[] chunks = new BoardChunk[chunkTasks.size()];
 
 		try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-			List<Future<BoardChunk>> futures = new ArrayList<>(chunkTasks.length);
+			List<Future<BoardChunk>> futures = new ArrayList<>(chunkTasks.size());
 			for (Callable<BoardChunk> chunkTask : chunkTasks) {
 				futures.add(scope.fork(chunkTask));
 			}
@@ -60,6 +66,7 @@ public class PrettyExportTask extends AExportTask {
 			}
 		}
 
+		startExporting();
 		Board board = merge(chunks);
 		try (var stream = new PrintStream(new FileOutputStream(file))) {
 			for (int y = 0; y < board.height(); ++y) {
@@ -69,6 +76,7 @@ public class PrettyExportTask extends AExportTask {
 				stream.println();
 			}
 		}
+		stopExporting();
 
 		return null;
 	}

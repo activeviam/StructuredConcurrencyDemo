@@ -8,11 +8,13 @@ import com.activeviam.experiments.gameoflife.biz.tasks.export.AExportTask;
 import com.activeviam.experiments.gameoflife.biz.tasks.export.AExportTask.SinkConfig;
 import com.activeviam.experiments.gameoflife.biz.tasks.export.AExportTask.SinkType;
 import com.activeviam.experiments.gameoflife.biz.tasks.process.ComputeTask;
-import com.activeviam.experiments.gameoflife.biz.tasks.process.FilterTask;
+import com.activeviam.experiments.gameoflife.biz.tasks.process.SplitTask;
 import com.activeviam.experiments.gameoflife.biz.tasks.retrieve.ARetrieveTask;
 import com.activeviam.experiments.gameoflife.biz.tasks.retrieve.ARetrieveTask.SourceConfig;
 import com.activeviam.experiments.gameoflife.biz.tasks.retrieve.ARetrieveTask.SourceType;
+import com.activeviam.experiments.gameoflife.task.ATask;
 import com.activeviam.experiments.gameoflife.task.TaskUtils;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
@@ -60,40 +62,40 @@ public class GameOfLifeTaskBuilder {
 			throw new IllegalArgumentException("Parallelism factor must be positive");
 		}
 
-		Callable<Board> retrieveTask = ARetrieveTask.build(this.sourceConfig);
+		ATask<Board> retrieveTask = ARetrieveTask.build(this.sourceConfig);
 
-		Callable<BoardChunk>[] lastGeneration = buildFilterTasks(retrieveTask, this.parallelism);
+		List<ATask<BoardChunk>> lastGeneration = buildFilterTasks(retrieveTask, this.parallelism);
 		for (int i = 0; i < numIterations; ++i) {
 			lastGeneration = buildNextGeneration(lastGeneration);
 		}
 
-		Callable<Void> exportTask = AExportTask.build(this.sinkConfig, lastGeneration);
+		ATask<Void> exportTask = AExportTask.build(this.sinkConfig, lastGeneration);
 
 		GameOfLifeContext ctx = new GameOfLifeContext(parallelism, numIterations);
 		return () -> GameOfLifeContext.withContext(ctx)
-				.call(TaskUtils.withWatcher(exportTask, new GameOfLifeWatcher()));
+				.call(TaskUtils.withWatchers(exportTask, new GameOfLifeWatcher()));
 	}
 
-	private Callable<BoardChunk>[] buildNextGeneration(Callable<BoardChunk>[] lastGeneration) {
-		Callable<BoardChunk>[] tasks = new ComputeTask[lastGeneration.length];
+	private List<ATask<BoardChunk>> buildNextGeneration(List<ATask<BoardChunk>> lastGeneration) {
+		ComputeTask[] tasks = new ComputeTask[lastGeneration.size()];
 
 		for (int i = 0; i < tasks.length; ++i) {
-			Callable<BoardChunk> prev = i > 0 ? lastGeneration[i - 1] : null;
-			Callable<BoardChunk> same = lastGeneration[i];
-			Callable<BoardChunk> next = i < tasks.length - 1 ? lastGeneration[i + 1] : null;
+			ATask<BoardChunk> prev = i > 0 ? lastGeneration.get(i - 1) : null;
+			ATask<BoardChunk> same = lastGeneration.get(i);
+			ATask<BoardChunk> next = i < tasks.length - 1 ? lastGeneration.get(i + 1) : null;
 			tasks[i] = new ComputeTask(prev, same, next, i);
 		}
 
-		return tasks;
+		return List.of(tasks);
 	}
 
-	private Callable<BoardChunk>[] buildFilterTasks(Callable<Board> retrieveTask, int parallelism) {
-		Callable<BoardChunk>[] tasks = new FilterTask[parallelism];
+	private List<ATask<BoardChunk>> buildFilterTasks(ATask<Board> retrieveTask, int parallelism) {
+		SplitTask[] tasks = new SplitTask[parallelism];
 
 		for (int i = 0; i < parallelism; ++i) {
-			tasks[i] = new FilterTask(retrieveTask, i, parallelism);
+			tasks[i] = new SplitTask(retrieveTask, i, parallelism);
 		}
 
-		return tasks;
+		return List.of(tasks);
 	}
 }

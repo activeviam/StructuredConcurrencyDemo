@@ -4,23 +4,31 @@ import com.activeviam.experiments.gameoflife.biz.Utils;
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
 import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext;
 import com.activeviam.experiments.gameoflife.task.ATask;
-import java.util.concurrent.Callable;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.incubator.concurrent.StructuredTaskScope;
 
 public class ComputeTask extends ATask<BoardChunk> {
 
-	private Callable<BoardChunk> prevTask;
-	private Callable<BoardChunk> sameTask;
-	private Callable<BoardChunk> nextTask;
+	private ATask<BoardChunk> prevTask;
+	private ATask<BoardChunk> sameTask;
+	private ATask<BoardChunk> nextTask;
 	private final int idx;
 
-	public ComputeTask(Callable<BoardChunk> prevTask, Callable<BoardChunk> sameTask, Callable<BoardChunk> nextTask,
+	public ComputeTask(ATask<BoardChunk> prevTask, ATask<BoardChunk> sameTask, ATask<BoardChunk> nextTask,
 			int idx) {
 		this.prevTask = prevTask;
 		this.sameTask = sameTask;
 		this.nextTask = nextTask;
 		this.idx = idx;
+	}
+
+	@Override
+	protected List<ATask<?>> getDependencies() {
+		return Stream.of(prevTask, sameTask, nextTask).filter(Objects::nonNull).collect(Collectors.toList());
 	}
 
 	@Override
@@ -41,18 +49,13 @@ public class ComputeTask extends ATask<BoardChunk> {
 			nextChunk = nextFuture.resultNow();
 		}
 
-		boolean[][] data = new boolean[sameChunk.getStripeWidth()][sameChunk.height()];
+		BoardChunk result = sameChunk.nextChunk();
+		boolean[][] data = result.data();
 		fill(data, prevChunk, sameChunk, nextChunk);
 
 		GameOfLifeContext.getContext().incProgress(idx);
 
-		return new BoardChunk(
-				sameChunk.width(),
-				sameChunk.height(),
-				sameChunk.beginWidth(),
-				sameChunk.endWidth(),
-				data
-		);
+		return result;
 	}
 
 	private void fill(boolean[][] data, BoardChunk prevChunk, BoardChunk sameChunk, BoardChunk nextChunk) {

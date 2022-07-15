@@ -1,5 +1,6 @@
 package com.activeviam.experiments.gameoflife.task;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +38,7 @@ public abstract class ATask<V> implements Callable<V> {
 		}
 	}
 
+	protected abstract List<ATask<?>> getDependencies();
 	protected abstract V compute() throws Exception;
 	protected abstract void dispose();
 }

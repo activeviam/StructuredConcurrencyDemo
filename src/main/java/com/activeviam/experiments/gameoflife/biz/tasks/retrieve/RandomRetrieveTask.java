@@ -3,7 +3,9 @@ package com.activeviam.experiments.gameoflife.biz.tasks.retrieve;
 import static com.activeviam.experiments.gameoflife.biz.Utils.parseArg;
 
 import com.activeviam.experiments.gameoflife.biz.board.Board;
+import com.activeviam.experiments.gameoflife.task.ATask;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 public class RandomRetrieveTask extends ARetrieveTask {
@@ -47,16 +49,23 @@ public class RandomRetrieveTask extends ARetrieveTask {
 	}
 
 	@Override
+	protected List<ATask<?>> getDependencies() {
+		return List.of();
+	}
+
+	@Override
 	protected Board compute() {
 		Random random = new Random();
 		random.setSeed(seed);
 
+		startRetrieving();
 		boolean[][] cells = new boolean[width][height];
 		for (int i = 0; i < width; ++i) {
 			for (int j = 0; j < height; ++j) {
 				cells[i][j] = random.nextBoolean();
 			}
 		}
+		stopRetrieving();
 
 		return new Board(width, height, cells);
 	}

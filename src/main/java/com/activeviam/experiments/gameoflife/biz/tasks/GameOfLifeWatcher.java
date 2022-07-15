@@ -1,39 +1,44 @@
 package com.activeviam.experiments.gameoflife.biz.tasks;
 
+import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext.ExecutionStage;
 import com.activeviam.experiments.gameoflife.task.ATask;
+import java.util.Arrays;
+import java.util.List;
 
 public class GameOfLifeWatcher extends ATask<Void> {
+
+	@Override
+	protected List<ATask<?>> getDependencies() {
+		return List.of();
+	}
 
 	@SuppressWarnings({"BusyWait", "InfiniteLoopStatement"})
 	@Override
 	protected Void compute() throws Exception {
-		startTimer();
-
 		try {
 			while (true) {
-				trace();
+				traceProgress();
 				Thread.sleep(1000);
 			}
 		} catch (InterruptedException e) {
-			stopTimer();
-			traceTimer();
+			traceSummary();
 			throw e;
 		}
 	}
 
-	private void trace() {
+	private void traceProgress() {
 		GameOfLifeContext ctx = GameOfLifeContext.getContext();
 
 		StringBuilder sb = new StringBuilder();
-		sb.append("Total iterations: ").append(ctx.getIterations()).append('\n');
+		sb.append("Total iterations: ").append(ctx.getIterations());
 		for (int i = 0; i < ctx.getParallelism(); ++i) {
-			sb.append(String.format("%8d", ctx.getProgress(i)));
-			if (i % 4 == 3) {
+			if (i % 4 == 0) {
 				sb.append('\n');
 			}
+			sb.append(String.format("%8d", ctx.getProgress(i)));
 		}
 
-		System.out.println(sb);
+		System.err.println(sb);
 	}
 
 	@Override
@@ -41,19 +46,38 @@ public class GameOfLifeWatcher extends ATask<Void> {
 		// Do nothing.
 	}
 
-	private long beginTime;
-	private long endTime;
 	private static final double NS_TO_MS = 1e-6;
 
-	private void startTimer() {
-		beginTime = System.nanoTime();
+	private void traceSummary() {
+		traceContext();
+		traceTimer();
 	}
 
-	private void stopTimer() {
-		endTime = System.nanoTime();
+	private void traceContext() {
+		System.out.println("Context: ");
+		System.out.println(GameOfLifeContext.getContext());
 	}
 
 	private void traceTimer() {
-		System.out.println("Time elapsed: " + (endTime - beginTime) * NS_TO_MS + " ms");
+		StringBuilder sb = new StringBuilder();
+		sb.append("Stages duration:\n");
+
+		int titleLength =
+				Arrays.stream(ExecutionStage.values())
+						.map(stage -> stage.name().length())
+						.reduce(0, Math::max);
+
+		var durations = GameOfLifeContext.getContext().getDurations();
+		for (ExecutionStage stage : ExecutionStage.values()) {
+			if (!durations.containsKey(stage)) {
+				continue;
+			}
+
+			sb.append(stage).append(": ")
+				.append(" ".repeat(titleLength - stage.name().length()))
+				.append(durations.get(stage) * NS_TO_MS).append(" ms\n");
+		}
+
+		System.out.println(sb);
 	}
 }

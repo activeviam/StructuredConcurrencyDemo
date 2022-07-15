@@ -7,7 +7,7 @@ import java.io.File;
 
 public class Main {
 	public static void main(String[] args) throws Exception {
-		int[] parallelismValues = new int[]{1, 2, 4, 8, 16};
+		int[] parallelismValues = new int[]{1, 2, 4, 8, 16, 24, 32};
 
 		for (int parallelism : parallelismValues) {
 			new GameOfLifeTaskBuilder()

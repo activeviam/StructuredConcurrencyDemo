@@ -1,6 +1,8 @@
 package com.activeviam.experiments.gameoflife.biz.tasks.retrieve;
 
 import com.activeviam.experiments.gameoflife.biz.board.Board;
+import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext;
+import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext.ExecutionStage;
 import com.activeviam.experiments.gameoflife.task.ATask;
 
 public abstract class ARetrieveTask extends ATask<Board> {
@@ -17,5 +19,13 @@ public abstract class ARetrieveTask extends ATask<Board> {
 		return switch (config.type) {
 			case RANDOM -> RandomRetrieveTask.build(config);
 		};
+	}
+
+	protected void startRetrieving() {
+		GameOfLifeContext.getContext().addTimestamp(ExecutionStage.RETRIEVING);
+	}
+
+	protected void stopRetrieving() {
+		GameOfLifeContext.getContext().addTimestamp(ExecutionStage.COMPUTING);
 	}
 }
