@@ -1,6 +1,7 @@
 package com.activeviam.experiments.gameoflife.biz.tasks;
 
-import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext.ExecutionStage;
+import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext;
+import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext.ExecutionStage;
 import com.activeviam.experiments.gameoflife.task.ATask;
 import java.util.Arrays;
 import java.util.List;

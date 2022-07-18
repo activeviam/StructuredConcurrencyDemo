@@ -1,4 +1,4 @@
-package com.activeviam.experiments.gameoflife.biz.tasks;
+package com.activeviam.experiments.gameoflife.biz;
 
 import java.util.Comparator;
 import java.util.HashMap;

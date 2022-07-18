@@ -2,7 +2,7 @@ package com.activeviam.experiments.gameoflife.biz.tasks.process;
 
 import com.activeviam.experiments.gameoflife.biz.Utils;
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
-import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext;
+import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext;
 import com.activeviam.experiments.gameoflife.task.ATask;
 import com.activeviam.experiments.gameoflife.task.TaskForker;
 import java.util.List;

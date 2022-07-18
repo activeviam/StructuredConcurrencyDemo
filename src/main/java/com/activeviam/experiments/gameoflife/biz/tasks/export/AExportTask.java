@@ -1,8 +1,8 @@
 package com.activeviam.experiments.gameoflife.biz.tasks.export;
 
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
-import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext;
-import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext.ExecutionStage;
+import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext;
+import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext.ExecutionStage;
 import com.activeviam.experiments.gameoflife.task.ATask;
 import java.util.List;
 

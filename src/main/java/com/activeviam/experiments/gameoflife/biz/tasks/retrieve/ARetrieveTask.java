@@ -1,8 +1,8 @@
 package com.activeviam.experiments.gameoflife.biz.tasks.retrieve;
 
 import com.activeviam.experiments.gameoflife.biz.board.Board;
-import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext;
-import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext.ExecutionStage;
+import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext;
+import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext.ExecutionStage;
 import com.activeviam.experiments.gameoflife.task.ATask;
 
 /**

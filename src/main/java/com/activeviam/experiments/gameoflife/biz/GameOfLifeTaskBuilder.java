@@ -2,7 +2,6 @@ package com.activeviam.experiments.gameoflife.biz;
 
 import com.activeviam.experiments.gameoflife.biz.board.Board;
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
-import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext;
 import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeWatcher;
 import com.activeviam.experiments.gameoflife.biz.tasks.export.AExportTask;
 import com.activeviam.experiments.gameoflife.biz.tasks.export.AExportTask.SinkConfig;

@@ -78,6 +78,125 @@ be unmounted until the result is ready.
 
 Structured Concurrency combined with Virtual Threads allows you to write easy-to-understand multi-threaded code.
 
+<h3>Extent Locals</h3>
+
+Extent locals is a new concept introduced in Java 19 as an alternative to thread locals. Virtual threads support
+working with ThreadLocal variables, but their usage can be associated with a significant memory consumption (a hash
+table is created in each thread containing all thread-local variables associated with this thread).
+
+A common reason to use ThreadLocal variables is to pass some context between tasks. To do this, the following
+wrapper code is often used:
+
+```java
+class Task {
+
+	private static final ThreadLocal<Task> CURRENT_TASK = new ThreadLocal<>();
+	private Task currentTask;
+
+	public void compute() {
+		pushExecutionContext();
+		try {
+			computeSafely();
+		} finally {
+			popExecutionContext();
+		}
+	}
+
+	void pushExecutionContext() {
+		this.previousTask = CURRENT_TASK.get();
+		CURRENT_TASK.set(this);
+	}
+
+	void popExecutionContext() {
+		CURRENT_TASK.set(this.previousTask);
+		this.previousTask = null;
+	}
+}
+```
+
+This approach is justified when working with a pool of threads. Nevertheless, this approach can cause various
+errors and vulnerabilities, ranging from incorrect values of variables (if some part of the context was forgotten
+to be set) and up to leaks of secret variables (for example, if as a result of the work-stealing algorithm one task
+gains access to the data of another task).
+
+If we use virtual threads, then such a context has another important property: it is set only once during the
+lifetime of the thread (because one thread executes only one task). In some sense, a context variable must be
+declared final.
+
+ExtentLocal is a concept designed to solve this problem. Like ThreadLocal, an extent-local variable is most often
+declared as a static final field of some class. The value that code can read from the extent-local variable depends
+on which thread the code is executing on. The key difference from a thread-local variable is how an extent-local
+variable is bound to a value.
+
+In order to assign the value of extent-local to a variable, you must declare a scope. Within this scope, the
+extent-local variable has the constant value specified when the scope was created. This is done as follows:
+
+```java
+class Foo {
+
+	final static ExtentLocal<T> V = ExtentLocal.newInstance();
+
+	void bar() {
+		// caller code
+		ExtentLocal
+				.where(V, some_value)
+				.run(() -> {
+					// ... some code here ...
+					var foo = V.get();
+					// ... some more code ...
+				});
+	}
+}
+```
+
+This code structure makes it much easier to understand what value the code can read. The immutability of an
+extent-local variable allows you to get the required value much faster than in the case of thread-local variables (
+scopes create a tree structure, and each node of such a tree stores a cache of extent-local variables, which cannot
+be invalidated, since the variables are immutable).
+
+The problem with leakage of secret values is solved as follows. Consider the following code snippet (example from
+[https://openjdk.org/jeps/8263012](https://openjdk.org/jeps/8263012), section "Rebinding of extent-local variables"
+):
+
+```java
+class Foo {
+
+	void foo() {
+		String password = PASSWORD.get();
+		doSomethingWithPassword(password);
+
+		Logger.log(() -> {
+			return "Password: " + PASSWORD.get();
+			// Security leak:     ^^^^^^^^^^^^^^
+		});
+	}
+}
+```
+
+Inside the `foo()` method, we need access to `PASSWORD`. But in the logger code, the password must be hidden. To do
+this, you can change the logger as follows:
+
+```java
+class Logger {
+
+	void log(Supplier<String> supplier) {
+		if (loggingEnabled) {
+			var message = ExtentLocal
+					.where(PASSWORD, null)
+					.call(supplier::get);
+			doLog(message);
+		}
+	}
+}
+```
+
+In the `log()` method itself, the code will be able to read the password, but the supplier code will be executed in
+a new scope, and in it the value of the `PASSWORD` variable will be hidden behind the new binding.
+
+Extent-locals and structured concurrency scopes are compatible with each other. Using extent-locals is the
+recommended way to pass context variables to the parallel subtasks (see
+[GameOfLifeContext class](./src/main/java/com/activeviam/experiments/gameoflife/biz/GameOfLifeContext.java)).
+
 Implementation
 ---
 
@@ -180,9 +299,19 @@ class Foo {
 					throw e;
 				}
 			});
-			
+
 			return scope.join().result();
 		}
 	}
 }
 ```
+
+Compile & Run
+---
+
+In order to compile the project, you need to download OpenJDK Early-Access build with Project Loom support:
+[https://jdk.java.net/loom/](https://jdk.java.net/loom/). The code is tested on the Build 19-loom+6-625
+(2022/4/29). Since the API is unstable, further updates my break this code.
+
+This build includes the following [bug (JDK-8286859)](https://bugs.openjdk.org/browse/JDK-8286859). It seems that
+this bug doesn't affect the code, but I cannot guarantee it. 
