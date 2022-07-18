@@ -315,3 +315,12 @@ In order to compile the project, you need to download OpenJDK Early-Access build
 
 This build includes the following [bug (JDK-8286859)](https://bugs.openjdk.org/browse/JDK-8286859). It seems that
 this bug doesn't affect the code, but I cannot guarantee it. 
+
+To run the project, use the following command:
+```bash
+java \
+  -cp target/classes \
+  --enable-preview \
+  --add-modules jdk.incubator.concurrent \
+  com.activeviam.experiments.gameoflife.Main 
+```
