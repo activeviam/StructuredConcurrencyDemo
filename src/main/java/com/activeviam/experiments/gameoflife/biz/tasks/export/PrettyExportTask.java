@@ -15,19 +15,42 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import jdk.incubator.concurrent.StructuredTaskScope;
 
+/**
+ * An implementation of export task. Exports the Game Of Life board into a file in the human-readable format, like
+ * this:
+ * <pre>
+ * _*_
+ * __*
+ * ***
+ * </pre>
+ */
 public class PrettyExportTask extends AExportTask {
 
 	private List<ATask<BoardChunk>> chunkTasks;
 	private File file;
 
-	private PrettyExportTask(List<ATask<BoardChunk>> chunkTasks, File file) {
+	/**
+	 * Constructs the task.
+	 *
+	 * @param chunkTasks List of tasks that produce the chunks of the last generation of the board
+	 * @param file       The file where the result should be exported
+	 */
+	public PrettyExportTask(List<ATask<BoardChunk>> chunkTasks, File file) {
 		this.chunkTasks = chunkTasks;
 		this.file = file;
 	}
 
 	private record Parameters(File file) {
+
 	}
 
+	/**
+	 * Builds a new {@link PrettyExportTask} instance.
+	 *
+	 * @param config     Export task configuration
+	 * @param chunkTasks The tasks that produce the chunks of the last generation of the board
+	 * @return A new instance
+	 */
 	public static PrettyExportTask build(SinkConfig config, List<ATask<BoardChunk>> chunkTasks) {
 		Parameters params = tryParseParams(config);
 		return new PrettyExportTask(chunkTasks, params.file);
@@ -88,14 +111,14 @@ public class PrettyExportTask extends AExportTask {
 	}
 
 	private Board merge(BoardChunk[] chunks) {
-		int width = chunks[0].width();
-		int height = chunks[0].height();
+		int width = chunks[0].getWidth();
+		int height = chunks[0].getHeight();
 
 		boolean[][] data = new boolean[width][];
 
 		for (BoardChunk chunk : chunks) {
 			if (chunk.getStripeWidth() >= 0) {
-				System.arraycopy(chunk.data(), 0, data, chunk.beginWidth(), chunk.getStripeWidth());
+				System.arraycopy(chunk.getData(), 0, data, chunk.getBeginWidth(), chunk.getStripeWidth());
 			}
 		}
 		return new Board(width, height, data);

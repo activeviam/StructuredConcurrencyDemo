@@ -4,6 +4,7 @@ import com.activeviam.experiments.gameoflife.biz.Utils;
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
 import com.activeviam.experiments.gameoflife.biz.tasks.GameOfLifeContext;
 import com.activeviam.experiments.gameoflife.task.ATask;
+import com.activeviam.experiments.gameoflife.task.TaskForker;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Future;
@@ -11,6 +12,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.incubator.concurrent.StructuredTaskScope;
 
+/**
+ * This class represents the Game Of Life computation task.
+ */
 public class ComputeTask extends ATask<BoardChunk> {
 
 	private ATask<BoardChunk> prevTask;
@@ -18,6 +22,15 @@ public class ComputeTask extends ATask<BoardChunk> {
 	private ATask<BoardChunk> nextTask;
 	private final int idx;
 
+	/**
+	 * Constructs a new computation tasks.
+	 *
+	 * @param prevTask The task that returns the left-neighbour chunk of the previous generation (may be null)
+	 * @param sameTask The task that returns the same chunk of the previous generation
+	 * @param nextTask The task that returns the right-neighbour chunk of the previous generation (may be null)
+	 * @param idx      The chunk index
+	 */
+	@SuppressWarnings("GrazieInspection")
 	public ComputeTask(ATask<BoardChunk> prevTask, ATask<BoardChunk> sameTask, ATask<BoardChunk> nextTask,
 			int idx) {
 		this.prevTask = prevTask;
@@ -38,10 +51,12 @@ public class ComputeTask extends ATask<BoardChunk> {
 		BoardChunk nextChunk;
 
 		try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-			Future<BoardChunk> prevFuture = Utils.forkOrDefault(scope, prevTask, null);
-			Future<BoardChunk> sameFuture = scope.fork(sameTask);
-			Future<BoardChunk> nextFuture = Utils.forkOrDefault(scope, nextTask, null);
+			var forker = new TaskForker<>(scope);
+			Future<BoardChunk> prevFuture = Utils.forkOrDefault(forker, prevTask, null);
+			Future<BoardChunk> sameFuture = forker.fork(sameTask);
+			Future<BoardChunk> nextFuture = Utils.forkOrDefault(forker, nextTask, null);
 
+			forker.done();
 			scope.join().throwIfFailed();
 
 			prevChunk = prevFuture.resultNow();
@@ -50,7 +65,7 @@ public class ComputeTask extends ATask<BoardChunk> {
 		}
 
 		BoardChunk result = sameChunk.nextChunk();
-		boolean[][] data = result.data();
+		boolean[][] data = result.getData();
 		fill(data, prevChunk, sameChunk, nextChunk);
 
 		GameOfLifeContext.getContext().incProgress(idx);
@@ -60,29 +75,29 @@ public class ComputeTask extends ATask<BoardChunk> {
 
 	private void fill(boolean[][] data, BoardChunk prevChunk, BoardChunk sameChunk, BoardChunk nextChunk) {
 		int stripeWidth = sameChunk.getStripeWidth();
-		int height = sameChunk.height();
+		int height = sameChunk.getHeight();
 
-		for (int i = 0; i < stripeWidth; ++i) {
-			for (int j = 0; j < height; ++j) {
-				boolean isAlive = sameChunk.getAt(i, j);
+		for (int x = 0; x < stripeWidth; ++x) {
+			for (int y = 0; y < height; ++y) {
+				boolean isAlive = sameChunk.getAt(x, y);
 				int neighbours = 0;
 
-				for (int di = -1; di <= 1; ++di) {
-					for (int dj = -1; dj <= 1; ++dj) {
-						if (di == 0 && dj == 0) {
+				for (int dx = -1; dx <= 1; ++dx) {
+					for (int dy = -1; dy <= 1; ++dy) {
+						if (dx == 0 && dy == 0) {
 							continue;
 						}
 
-						int ni = i + di;
-						int nj = j + dj;
+						int nx = x + dx;
+						int ny = y + dy;
 
 						boolean isNeighbourAlive;
-						if (ni < 0) {
-							isNeighbourAlive = prevChunk != null && prevChunk.getAt(prevChunk.getStripeWidth() - 1, nj);
-						} else if (ni >= stripeWidth) {
-							isNeighbourAlive = nextChunk != null && nextChunk.getAt(0, nj);
+						if (nx < 0) {
+							isNeighbourAlive = prevChunk != null && prevChunk.getAt(prevChunk.getStripeWidth() - 1, ny);
+						} else if (nx >= stripeWidth) {
+							isNeighbourAlive = nextChunk != null && nextChunk.getAt(0, ny);
 						} else {
-							isNeighbourAlive = sameChunk.getAt(ni, nj);
+							isNeighbourAlive = sameChunk.getAt(nx, ny);
 						}
 
 						if (isNeighbourAlive) {
@@ -91,7 +106,7 @@ public class ComputeTask extends ATask<BoardChunk> {
 					}
 				}
 
-				data[i][j] = decide(isAlive, neighbours);
+				data[x][y] = decide(isAlive, neighbours);
 			}
 		}
 	}

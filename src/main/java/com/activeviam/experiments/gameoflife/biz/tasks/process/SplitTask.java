@@ -5,12 +5,22 @@ import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
 import com.activeviam.experiments.gameoflife.task.ATask;
 import java.util.List;
 
+/**
+ * This task extracts a chunk that will be processed by consequent {@link ComputeTask computation tasks}.
+ */
 public class SplitTask extends ATask<BoardChunk> {
 
 	private ATask<Board> retrieve;
 	private final int idx;
 	private final int parallelism;
 
+	/**
+	 * Constructs a new task.
+	 *
+	 * @param retrieve    The task that returns the initial board
+	 * @param idx         The chunk index
+	 * @param parallelism The number of chunks
+	 */
 	public SplitTask(ATask<Board> retrieve, int idx, int parallelism) {
 		this.retrieve = retrieve;
 		this.idx = idx;

@@ -5,6 +5,9 @@ import com.activeviam.experiments.gameoflife.task.ATask;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * This task watches for the computation progress. This task never stops unless interrupted.
+ */
 public class GameOfLifeWatcher extends ATask<Void> {
 
 	@Override
@@ -74,8 +77,8 @@ public class GameOfLifeWatcher extends ATask<Void> {
 			}
 
 			sb.append(stage).append(": ")
-				.append(" ".repeat(titleLength - stage.name().length()))
-				.append(durations.get(stage) * NS_TO_MS).append(" ms\n");
+					.append(" ".repeat(titleLength - stage.name().length()))
+					.append(durations.get(stage) * NS_TO_MS).append(" ms\n");
 		}
 
 		System.out.println(sb);

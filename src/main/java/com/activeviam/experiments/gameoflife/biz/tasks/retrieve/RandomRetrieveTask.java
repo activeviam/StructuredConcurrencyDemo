@@ -8,21 +8,39 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * This class represents a retrieve task that generates a random Game Of Life board.
+ */
 public class RandomRetrieveTask extends ARetrieveTask {
 
 	private final int width;
 	private final int height;
 	private final long seed;
 
-	private RandomRetrieveTask(int width, int height, long seed) {
+	/**
+	 * Constructs a new RandomRetrieveTask instance.
+	 *
+	 * @param width  Board width
+	 * @param height Board height
+	 * @param seed   Random generator seed, see {@link Random#setSeed}.
+	 */
+	public RandomRetrieveTask(int width, int height, long seed) {
 		this.width = width;
 		this.height = height;
 		this.seed = seed;
 	}
 
 	private record Parameters(int width, int height, long seed) {
+
 	}
 
+
+	/**
+	 * Constructs a new {@link RandomRetrieveTask} instance.
+	 *
+	 * @param config Retrieve task configuration
+	 * @return New task instance
+	 */
 	public static RandomRetrieveTask build(SourceConfig config) {
 		Parameters params = tryParseParams(config);
 		return new RandomRetrieveTask(params.width, params.height, params.seed);

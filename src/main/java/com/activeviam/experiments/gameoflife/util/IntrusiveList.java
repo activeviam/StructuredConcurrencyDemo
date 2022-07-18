@@ -1,9 +1,10 @@
 package com.activeviam.experiments.gameoflife.util;
 
-public class IntrusiveList<T> {
-	protected T next;
+/**
+ * A helper interface that adds single-list functionality
+ * @param <T> The type to be modified
+ */
+public interface IntrusiveList<T> {
 
-	protected T getNext() {
-		return next;
-	}
+	T getNext();
 }

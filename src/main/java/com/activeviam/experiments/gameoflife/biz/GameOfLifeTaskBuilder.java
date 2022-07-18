@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
+/**
+ * This class is used to build a Game Of Life computation workflow.
+ */
 public class GameOfLifeTaskBuilder {
 
 	private SourceConfig sourceConfig;
@@ -25,26 +28,58 @@ public class GameOfLifeTaskBuilder {
 	private Integer numIterations;
 	private Integer parallelism;
 
+	/**
+	 * Set up source configuration.
+	 *
+	 * @param type Source type
+	 * @param args Arguments to be passed to the constructor
+	 * @return This builder
+	 */
 	public GameOfLifeTaskBuilder withSource(SourceType type, Object... args) {
 		this.sourceConfig = new SourceConfig(type, args);
 		return this;
 	}
 
+	/**
+	 * Set up sink configuration.
+	 *
+	 * @param type Sink type
+	 * @param args Arguments to be passed to the constructor
+	 * @return This builder
+	 */
 	public GameOfLifeTaskBuilder withSink(SinkType type, Object... args) {
 		this.sinkConfig = new SinkConfig(type, args);
 		return this;
 	}
 
+	/**
+	 * Set up the number of iterations.
+	 *
+	 * @param numIterations Number of iterations
+	 * @return This builder
+	 */
 	public GameOfLifeTaskBuilder withIterations(int numIterations) {
 		this.numIterations = numIterations;
 		return this;
 	}
 
+	/**
+	 * Set up number of parallel computation flows. If not set,
+	 * {@link Runtime#availableProcessors() Runtime.getRuntime().availableProcessors()} will be used.
+	 *
+	 * @param parallelism Number of computation flows
+	 * @return This builder
+	 */
 	public GameOfLifeTaskBuilder withParallelism(int parallelism) {
 		this.parallelism = parallelism;
 		return this;
 	}
 
+	/**
+	 * Constructs the workflow.
+	 *
+	 * @return A callable that represents the workflow
+	 */
 	public Callable<Void> build() {
 		Objects.requireNonNull(this.sourceConfig, "Source is not configured");
 		Objects.requireNonNull(this.sinkConfig, "Sink is not configured");

@@ -9,8 +9,19 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import jdk.incubator.concurrent.StructuredTaskScope;
 
+/**
+ * This class provides some utilities useful for creating tasks.
+ */
 public class TaskUtils {
 
+	/**
+	 * Run a task along with watcher tasks (e.g. loggers).
+	 *
+	 * @param mainTask     The main task to be executed
+	 * @param watcherTasks Watcher tasks
+	 * @param <V>          The return type of main tasks
+	 * @return A new task that encapsulates the original main task and runs watchers in parallel
+	 */
 	public static <V> ATask<V> withWatchers(ATask<V> mainTask, ATask<?>... watcherTasks) {
 		return new TaskWithWatchers<>(mainTask, watcherTasks);
 	}
@@ -41,12 +52,12 @@ public class TaskUtils {
 							watcherTask.call();
 							throw new IllegalStateException("Watcher must not terminate normally");
 						} catch (InterruptedException e) {
-							// Do nothing, it's ok
+							// It's an expected way to terminate the watcher
+							throw e;
 						} catch (Throwable t) {
 							t.printStackTrace();
 							throw t;
 						}
-						return null;
 					});
 				}
 
@@ -62,8 +73,16 @@ public class TaskUtils {
 		}
 	}
 
+	/**
+	 * Scan the dependency graph of the task and run all the tasks in correct order in parallel. May be useful if the
+	 * dependency graph depth is large.
+	 *
+	 * @param resultTask The main task
+	 * @param <T>        The return type of the main task
+	 * @return A wrapper task that runs all the dependencies in the topological sort order
+	 */
 	public static <T> ATask<T> buildRunner(ATask<T> resultTask) {
-		return new DependenciesRunner(resultTask);
+		return new DependenciesRunner<>(resultTask);
 	}
 
 	private static class DependenciesRunner<V> extends ATask<V> {
@@ -79,7 +98,9 @@ public class TaskUtils {
 		private void scanDependencies() {
 			Set<ATask<?>> visited = new HashSet<>();
 
+			@SuppressWarnings("MissingJavadoc")
 			record StackEntry(ATask<?> node, Iterator<ATask<?>> edges) {
+
 				public StackEntry(ATask<?> node) {
 					this(node, node.getDependencies().iterator());
 				}
