@@ -7,7 +7,7 @@ and its implementation in [Project Loom](https://jdk.java.net/loom/) using a
 
 Concepts
 ---
-<h3>Structured Concurrency</h3>
+### Structured Concurrency
 
 The main idea of Structured Concurrency is that using the `go` operator (or the `new Thread(...).start()`,
 `executor.submit()` constructs, etc.) makes the code more complex. From the code, it becomes impossible to
@@ -17,7 +17,7 @@ which is extremely difficult to trace syntactically. It also makes debugging and
 difficult. Using callback chains breaks logically sequential code into unrelated parts.
 
 In order to cope with these problems, it is proposed to switch to another design pattern, linking the moments of
-creation and completion of parallel subtasks to the block structure of the code. For this, the concept of _scope_
+creation and completion of parallel subtasks to the block structure of the code. For this, the concept of *scope*
 is introduced. The code in this paradigm looks something like this:
 
 ```java
@@ -55,8 +55,9 @@ the background. Everything that we launched in the block must be completed in it
 will be delivered to the caller code. Every resource opened before the scope may be closed after the scope since no
 background tasks use it.
 
-<h3>Virtual Threads</h3>
-Another important concept introduced in Project Loom is _virtual threads_. For the user, a virtual thread is
+### Virtual Threads
+
+Another important concept introduced in Project Loom is *virtual threads*. For the user, a virtual thread is
 practically no different from a normal, "physical" thread. The main difference lies in implementation. Regular Java
 threads most often correspond to operating system threads. Their management is done by the OS, and this imposes
 significant restrictions. First, the process of creating a system thread takes a lot of time. Secondly, using more
@@ -78,7 +79,7 @@ be unmounted until the result is ready.
 
 Structured Concurrency combined with Virtual Threads allows you to write easy-to-understand multi-threaded code.
 
-<h3>Extent Locals</h3>
+### Extent Locals
 
 Extent locals is a new concept introduced in Java 19 as an alternative to thread locals. Virtual threads support
 working with ThreadLocal variables, but their usage can be associated with a significant memory consumption (a hash
@@ -139,7 +140,7 @@ class Foo {
 	void bar() {
 		// caller code
 		ExtentLocal
-				.where(V, some_value)
+				.where(V, someValue)
 				.run(() -> {
 					// ... some code here ...
 					var foo = V.get();
@@ -200,7 +201,8 @@ recommended way to pass context variables to the parallel subtasks (see
 Implementation
 ---
 
-<h3>Task</h3>
+### Task
+
 The main building block of this project is the `ATask` abstract class. This class encapsulates functionality that
 allows multiple blocks of code to refer to the same subtask. The code for this class looks like this:
 
@@ -278,7 +280,7 @@ If any of the tasks is already running, the new virtual thread will simply block
 task to complete. At the same time, its termination with an error will cause the error to be thrown in all calling
 threads.
 
-<h3>Watcher pattern</h3>
+### Watcher pattern
 
 In the following example, we add a simple watcher that traces the computation progress:
 
@@ -317,6 +319,7 @@ This build includes the following [bug (JDK-8286859)](https://bugs.openjdk.org/b
 this bug doesn't affect the code, but I cannot guarantee it. 
 
 To run the project, use the following command:
+
 ```bash
 java \
   -cp target/classes \
