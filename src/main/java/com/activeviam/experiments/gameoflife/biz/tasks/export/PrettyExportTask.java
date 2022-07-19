@@ -11,7 +11,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import jdk.incubator.concurrent.StructuredTaskScope;
 
@@ -78,7 +77,7 @@ public class PrettyExportTask extends AExportTask {
 
 		try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 			List<Future<BoardChunk>> futures = new ArrayList<>(chunkTasks.size());
-			for (Callable<BoardChunk> chunkTask : chunkTasks) {
+			for (ATask<BoardChunk> chunkTask : chunkTasks) {
 				futures.add(scope.fork(chunkTask));
 			}
 

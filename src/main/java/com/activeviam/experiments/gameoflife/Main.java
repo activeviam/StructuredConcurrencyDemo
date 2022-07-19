@@ -25,6 +25,7 @@ public class Main {
 					.withSink(SinkType.PRETTY, new File("game_of_life_%d.txt".formatted(parallelism)))
 					.withIterations(1000)
 					.withParallelism(parallelism)
+					.useWatcher(true)
 					.build()
 					.call();
 		}

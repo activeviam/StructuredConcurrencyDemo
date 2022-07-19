@@ -70,7 +70,7 @@ public abstract class ATask<V> implements Callable<V> {
 	V waitForResult() throws Exception {
 		done.await();
 		if (this.ex != null) {
-			throw new RuntimeException(this.ex);
+			throw new RuntimeException(this.ex); // <- Maybe replace with custom exception?
 		} else {
 			return this.result;
 		}
@@ -90,5 +90,5 @@ public abstract class ATask<V> implements Callable<V> {
 	 * Dispose links to the dependencies. Since the task holds its result, it is highly recommended to drop the links
 	 * the tasks the current task depends on and other resources.
 	 */
-	protected abstract void dispose();
+	protected abstract void dispose(); // <- Think about declarative way to release dependencies (e.g. annotations)
 }

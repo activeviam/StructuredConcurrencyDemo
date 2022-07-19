@@ -26,6 +26,7 @@ public class GameOfLifeTaskBuilder {
 	private SinkConfig sinkConfig;
 	private Integer numIterations;
 	private Integer parallelism;
+	private boolean useWatcher = false;
 
 	/**
 	 * Set up source configuration.
@@ -75,6 +76,17 @@ public class GameOfLifeTaskBuilder {
 	}
 
 	/**
+	 * Enable or disable watcher (see {@link GameOfLifeWatcher}).
+	 *
+	 * @param flag If set, a watcher will be attached
+	 * @return This builder
+	 */
+	public GameOfLifeTaskBuilder useWatcher(boolean flag) {
+		this.useWatcher = flag;
+		return this;
+	}
+
+	/**
 	 * Constructs the workflow.
 	 *
 	 * @return A callable that represents the workflow
@@ -98,16 +110,20 @@ public class GameOfLifeTaskBuilder {
 
 		ATask<Board> retrieveTask = ARetrieveTask.build(this.sourceConfig);
 
-		List<ATask<BoardChunk>> lastGeneration = buildFilterTasks(retrieveTask, this.parallelism);
+		List<ATask<BoardChunk>> lastGeneration = buildSplitTasks(retrieveTask, this.parallelism);
 		for (int i = 0; i < numIterations; ++i) {
 			lastGeneration = buildNextGeneration(lastGeneration);
 		}
 
 		ATask<Void> exportTask = AExportTask.build(this.sinkConfig, lastGeneration);
 
-		GameOfLifeContext ctx = new GameOfLifeContext(parallelism, numIterations);
-		return () -> GameOfLifeContext.withContext(ctx)
-				.call(TaskUtils.withWatchers(exportTask, new GameOfLifeWatcher()));
+		final ATask<Void> resultTask =
+				useWatcher
+						? TaskUtils.withWatchers(exportTask, new GameOfLifeWatcher())
+						: exportTask;
+
+		final GameOfLifeContext ctx = new GameOfLifeContext(parallelism, numIterations);
+		return () -> GameOfLifeContext.withContext(ctx).call(resultTask);
 	}
 
 	private List<ATask<BoardChunk>> buildNextGeneration(List<ATask<BoardChunk>> lastGeneration) {
@@ -123,7 +139,7 @@ public class GameOfLifeTaskBuilder {
 		return List.of(tasks);
 	}
 
-	private List<ATask<BoardChunk>> buildFilterTasks(ATask<Board> retrieveTask, int parallelism) {
+	private List<ATask<BoardChunk>> buildSplitTasks(ATask<Board> retrieveTask, int parallelism) {
 		SplitTask[] tasks = new SplitTask[parallelism];
 
 		for (int i = 0; i < parallelism; ++i) {
