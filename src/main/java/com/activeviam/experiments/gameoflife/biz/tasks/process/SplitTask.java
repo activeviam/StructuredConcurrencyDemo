@@ -3,13 +3,14 @@ package com.activeviam.experiments.gameoflife.biz.tasks.process;
 import com.activeviam.experiments.gameoflife.biz.board.Board;
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
 import com.activeviam.experiments.gameoflife.task.ATask;
-import java.util.List;
+import com.activeviam.experiments.gameoflife.task.Dependency;
 
 /**
  * This task extracts a chunk that will be processed by consequent {@link ComputeTask computation tasks}.
  */
 public class SplitTask extends ATask<BoardChunk> {
 
+	@Dependency
 	private ATask<Board> retrieve;
 	private final int idx;
 	private final int parallelism;
@@ -28,11 +29,6 @@ public class SplitTask extends ATask<BoardChunk> {
 	}
 
 	@Override
-	protected List<ATask<?>> getDependencies() {
-		return List.of(retrieve);
-	}
-
-	@Override
 	protected BoardChunk compute() throws Exception {
 		Board board = retrieve.call();
 
@@ -42,10 +38,5 @@ public class SplitTask extends ATask<BoardChunk> {
 		int endWidth = Math.min(width, beginWidth + stripeWidth);
 
 		return BoardChunk.ring(board.getChunk(beginWidth, endWidth), 2);
-	}
-
-	@Override
-	protected void dispose() {
-		retrieve = null;
 	}
 }

@@ -5,6 +5,7 @@ import static com.activeviam.experiments.gameoflife.biz.Utils.parseArg;
 import com.activeviam.experiments.gameoflife.biz.board.Board;
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
 import com.activeviam.experiments.gameoflife.task.ATask;
+import com.activeviam.experiments.gameoflife.task.Dependency;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -25,8 +26,9 @@ import jdk.incubator.concurrent.StructuredTaskScope;
  */
 public class PrettyExportTask extends AExportTask {
 
+	@Dependency
 	private List<ATask<BoardChunk>> chunkTasks;
-	private File file;
+	private final File file;
 
 	/**
 	 * Constructs the task.
@@ -67,11 +69,6 @@ public class PrettyExportTask extends AExportTask {
 	}
 
 	@Override
-	protected List<ATask<?>> getDependencies() {
-		return new ArrayList<>(chunkTasks);
-	}
-
-	@Override
 	protected Void compute() throws Exception {
 		BoardChunk[] chunks = new BoardChunk[chunkTasks.size()];
 
@@ -101,12 +98,6 @@ public class PrettyExportTask extends AExportTask {
 		stopExporting();
 
 		return null;
-	}
-
-	@Override
-	protected void dispose() {
-		chunkTasks = null;
-		file = null;
 	}
 
 	private Board merge(BoardChunk[] chunks) {

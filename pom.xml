@@ -11,9 +11,18 @@
   <properties>
     <maven.compiler.source>19</maven.compiler.source>
     <maven.compiler.target>19</maven.compiler.target>
+    <org.yaml.snakeyaml.version>1.29</org.yaml.snakeyaml.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>${org.yaml.snakeyaml.version}</version>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>

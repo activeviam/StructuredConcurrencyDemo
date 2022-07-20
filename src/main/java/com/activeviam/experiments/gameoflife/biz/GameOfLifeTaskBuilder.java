@@ -12,10 +12,10 @@ import com.activeviam.experiments.gameoflife.biz.tasks.retrieve.ARetrieveTask;
 import com.activeviam.experiments.gameoflife.biz.tasks.retrieve.ARetrieveTask.SourceConfig;
 import com.activeviam.experiments.gameoflife.biz.tasks.retrieve.ARetrieveTask.SourceType;
 import com.activeviam.experiments.gameoflife.task.ATask;
+import com.activeviam.experiments.gameoflife.task.Dependency;
 import com.activeviam.experiments.gameoflife.task.TaskUtils;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
 
 /**
  * This class is used to build a Game Of Life computation workflow.
@@ -91,7 +91,7 @@ public class GameOfLifeTaskBuilder {
 	 *
 	 * @return A callable that represents the workflow
 	 */
-	public Callable<Void> build() {
+	public ATask<Void> build() {
 		Objects.requireNonNull(this.sourceConfig, "Source is not configured");
 		Objects.requireNonNull(this.sinkConfig, "Sink is not configured");
 		Objects.requireNonNull(this.numIterations, "Number of iterations is not configured");
@@ -123,7 +123,15 @@ public class GameOfLifeTaskBuilder {
 						: exportTask;
 
 		final GameOfLifeContext ctx = new GameOfLifeContext(parallelism, numIterations);
-		return () -> GameOfLifeContext.withContext(ctx).call(resultTask);
+		return new ATask<>() {
+			@Dependency
+			private ATask<Void> task = resultTask;
+
+			@Override
+			protected Void compute() throws Exception {
+				return GameOfLifeContext.withContext(ctx).call(task);
+			}
+		};
 	}
 
 	private List<ATask<BoardChunk>> buildNextGeneration(List<ATask<BoardChunk>> lastGeneration) {

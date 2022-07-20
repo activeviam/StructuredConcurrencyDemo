@@ -4,17 +4,11 @@ import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext;
 import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext.ExecutionStage;
 import com.activeviam.experiments.gameoflife.task.ATask;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * This task watches for the computation progress. This task never stops unless interrupted.
  */
 public class GameOfLifeWatcher extends ATask<Void> {
-
-	@Override
-	protected List<ATask<?>> getDependencies() {
-		return List.of();
-	}
 
 	@SuppressWarnings({"BusyWait", "InfiniteLoopStatement"})
 	@Override
@@ -44,12 +38,6 @@ public class GameOfLifeWatcher extends ATask<Void> {
 
 		System.err.println(sb);
 	}
-
-	@Override
-	protected void dispose() {
-		// Do nothing.
-	}
-
 	private static final double NS_TO_MS = 1e-6;
 
 	private void traceSummary() {

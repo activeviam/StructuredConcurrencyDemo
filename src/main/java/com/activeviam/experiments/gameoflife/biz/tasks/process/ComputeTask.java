@@ -1,15 +1,12 @@
 package com.activeviam.experiments.gameoflife.biz.tasks.process;
 
+import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext;
 import com.activeviam.experiments.gameoflife.biz.Utils;
 import com.activeviam.experiments.gameoflife.biz.board.BoardChunk;
-import com.activeviam.experiments.gameoflife.biz.GameOfLifeContext;
 import com.activeviam.experiments.gameoflife.task.ATask;
+import com.activeviam.experiments.gameoflife.task.Dependency;
 import com.activeviam.experiments.gameoflife.task.TaskForker;
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import jdk.incubator.concurrent.StructuredTaskScope;
 
 /**
@@ -17,8 +14,11 @@ import jdk.incubator.concurrent.StructuredTaskScope;
  */
 public class ComputeTask extends ATask<BoardChunk> {
 
+	@Dependency
 	private ATask<BoardChunk> prevTask;
+	@Dependency
 	private ATask<BoardChunk> sameTask;
+	@Dependency
 	private ATask<BoardChunk> nextTask;
 	private final int idx;
 
@@ -37,11 +37,6 @@ public class ComputeTask extends ATask<BoardChunk> {
 		this.sameTask = sameTask;
 		this.nextTask = nextTask;
 		this.idx = idx;
-	}
-
-	@Override
-	protected List<ATask<?>> getDependencies() {
-		return Stream.of(prevTask, sameTask, nextTask).filter(Objects::nonNull).collect(Collectors.toList());
 	}
 
 	@Override
@@ -117,12 +112,5 @@ public class ComputeTask extends ATask<BoardChunk> {
 		} else {
 			return neighbours == 3;
 		}
-	}
-
-	@Override
-	protected void dispose() {
-		prevTask = null;
-		sameTask = null;
-		nextTask = null;
 	}
 }

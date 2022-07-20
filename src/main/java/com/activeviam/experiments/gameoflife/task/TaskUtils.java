@@ -28,17 +28,14 @@ public class TaskUtils {
 
 	private static class TaskWithWatchers<V> extends ATask<V> {
 
+		@Dependency
 		private ATask<V> mainTask;
+		@Dependency
 		private List<ATask<?>> watcherTasks;
 
 		public TaskWithWatchers(ATask<V> mainTask, ATask<?>... watcherTasks) {
 			this.mainTask = mainTask;
 			this.watcherTasks = List.of(watcherTasks);
-		}
-
-		@Override
-		protected List<ATask<?>> getDependencies() {
-			return List.of();
 		}
 
 		@Override
@@ -65,12 +62,6 @@ public class TaskUtils {
 				return scope.result();
 			}
 		}
-
-		@Override
-		protected void dispose() {
-			mainTask = null;
-			watcherTasks = null;
-		}
 	}
 
 	/**
@@ -87,7 +78,9 @@ public class TaskUtils {
 
 	private static class DependenciesRunner<V> extends ATask<V> {
 
+		@Dependency
 		private ATask<V> resultTask;
+		@Dependency
 		private List<ATask<?>> dependencies = new LinkedList<>();
 
 		public DependenciesRunner(ATask<V> resultTask) {
@@ -132,11 +125,6 @@ public class TaskUtils {
 		}
 
 		@Override
-		protected List<ATask<?>> getDependencies() {
-			return List.of();
-		}
-
-		@Override
 		protected V compute() throws Exception {
 			try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 				for (ATask<?> dependency : dependencies) {
@@ -147,12 +135,6 @@ public class TaskUtils {
 				scope.join().throwIfFailed();
 				return f.resultNow();
 			}
-		}
-
-		@Override
-		protected void dispose() {
-			resultTask = null;
-			dependencies = null;
 		}
 	}
 }

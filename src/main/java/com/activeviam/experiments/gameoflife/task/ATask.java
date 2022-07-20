@@ -1,9 +1,13 @@
 package com.activeviam.experiments.gameoflife.task;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An abstract task which represents one-shot computation. The result of this computation may be acquired by
@@ -76,7 +80,34 @@ public abstract class ATask<V> implements Callable<V> {
 		}
 	}
 
-	protected abstract List<ATask<?>> getDependencies();
+	/**
+	 * Retrieve all fields marked with {@link Dependency @Dependency} annotation.
+	 * @return Task dependencies
+	 * */
+	protected List<ATask<?>> getDependencies() {
+		return Arrays.stream(this.getClass().getDeclaredFields()).flatMap(field -> {
+			if (!field.isAnnotationPresent(Dependency.class)) {
+				return null;
+			}
+
+			try {
+				field.setAccessible(true);
+				if (ATask.class.isAssignableFrom(field.getType())) {
+					return Stream.ofNullable((ATask<?>) field.get(this));
+				} else if (Collection.class.isAssignableFrom(field.getType())) {
+					Collection<?> collection = (Collection<?>) field.get(this);
+					return collection
+							.stream()
+							.filter(x -> x != null && ATask.class.isAssignableFrom(x.getClass()))
+							.map(x -> (ATask<?>) x);
+				} else {
+					throw new RuntimeException("Field " + field + " should not be annotated with @Dependency");
+				}
+			} catch (IllegalAccessException e) {
+				throw new InternalError(e);
+			}
+		}).collect(Collectors.toList());
+	}
 
 	/**
 	 * The user-defined computation.
@@ -87,8 +118,22 @@ public abstract class ATask<V> implements Callable<V> {
 	protected abstract V compute() throws Exception;
 
 	/**
-	 * Dispose links to the dependencies. Since the task holds its result, it is highly recommended to drop the links
-	 * the tasks the current task depends on and other resources.
+	 * Dispose links to the dependencies. Since the task holds its result, it is highly recommended to mark the tasks
+	 * the current task depends on with {@link Dependency @Dependency} annotation.
 	 */
-	protected abstract void dispose(); // <- Think about declarative way to release dependencies (e.g. annotations)
+	protected void dispose() {
+		Arrays.stream(this.getClass().getDeclaredFields()).forEach(field -> {
+			if (!field.isAnnotationPresent(Dependency.class)) {
+				return;
+			}
+
+			try {
+				field.setAccessible(true);
+				field.set(this, null);
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+				throw new RuntimeException("Illegal access to the field " + field);
+			}
+		});
+	}
 }
